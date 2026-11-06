@@ -20,6 +20,7 @@
     "admin:create": "tsx scripts/create-admin.ts",
     "demo:seed": "tsx --conditions=react-server scripts/demo-seed.ts",
     "demo:remove": "tsx --conditions=react-server scripts/demo-remove.ts",
+    "demo:cars": "tsx --conditions=react-server scripts/sample-cars.ts",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "tsx --conditions=react-server scripts/e2e.ts",

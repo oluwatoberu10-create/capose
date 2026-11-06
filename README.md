@@ -28,6 +28,10 @@ npm run admin:create -- you@yourdealership.com "Your Name" owner   # prints a pa
 | Owner admin (only if no admin exists yet) | `admin@aurum-demo.test` | `AurumDemo!2026` |
 | Approved agent | `ada@aurum-demo.test` | `AgentDemo!2026` |
 
+To show a couple of sample cars on a live site (no demo accounts or finance data), run `npm run demo:cars`
+(default: Camry + Range Rover Sport; pass other keys from `scripts/demo-data.ts`). The demo seed itself refuses
+non-local databases because its logins are public.
+
 Remove all demo data with **Admin → Settings → Remove demo data** or `npm run demo:remove`.
 The demo admin login is kept until a real owner account exists, so you can't lock yourself out.
 
