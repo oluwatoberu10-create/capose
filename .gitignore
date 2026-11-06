@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env
+.env.local
+.pgdata/
+.pgdata.pw
+.uploads/
+.uploads-test/
+*.tsbuildinfo
+next-env.d.ts
+*.log
+.vercel
+.env*
+!.env.example
+.uploads-test/

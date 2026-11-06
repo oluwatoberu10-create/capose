@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #0b0b0c;
+  --color-graphite: #151517;
+  --color-carbon: #1f1f23;
+  --color-smoke: #2a2a2f;
+  --color-paper: #fafaf8;
+  --color-mist: #f3f2ef;
+  --color-line: #e5e3de;
+  --color-stone: #8a8a90;
+  --color-body: #2b2b30;
+  --color-muted: #66666d;
+  --color-gold: #a8823f;
+  --color-gold-bright: #c9a96a;
+  --color-gold-soft: #f4ecdd;
+  --color-ok: #1f7a4d;
+  --color-warn: #b26a00;
+  --color-bad: #b42318;
+
+  --radius-xl: 14px;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.05), 0 22px 40px -18px rgb(0 0 0 / 0.28);
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+  body { @apply bg-paper text-body font-sans antialiased; }
+  h1, h2, h3, h4 { @apply font-display text-ink; letter-spacing: -0.015em; }
+  ::selection { background: var(--color-gold-bright); color: var(--color-ink); }
+  :focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+  input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
+  @media (min-width: 640px) { input, select, textarea { font-size: 15px; } }
+}
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-gold; }
+  .field { @apply block w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-ink placeholder:text-stone shadow-[inset_0_1px_0_rgb(0_0_0/0.02)] transition focus:border-gold focus:ring-2 focus:ring-gold/20 focus:outline-none disabled:bg-mist disabled:text-muted; }
+  .field-dark { @apply block w-full rounded-lg border border-white/12 bg-white/[0.04] px-3.5 py-2.5 text-white placeholder:text-white/40 transition focus:border-gold-bright focus:ring-2 focus:ring-gold-bright/20 focus:outline-none; }
+  .label { @apply mb-1.5 block text-[13px] font-medium text-body; }
+  .card { @apply rounded-xl border border-line bg-white shadow-card; }
+  .skeleton { @apply animate-pulse rounded-md bg-mist; }
+  .table-x { @apply w-full text-left text-sm; }
+  .table-x th { @apply whitespace-nowrap border-b border-line bg-mist/60 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted; }
+  .table-x td { @apply border-b border-line/70 px-4 py-3 align-middle; }
+  .table-x tr:last-child td { @apply border-b-0; }
+  .table-x tbody tr { @apply transition-colors hover:bg-mist/40; }
+  .prose-x p { @apply mb-4 leading-relaxed text-muted; }
+  .prose-x h2 { @apply mt-10 mb-3 text-xl font-semibold; }
+  .prose-x ul { @apply mb-4 list-disc space-y-1.5 pl-5 text-muted; }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.animate-toast { animation: toast-in 0.25s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .animate-fade-up, .animate-toast { animation: none; } html { scroll-behavior: auto; } }
