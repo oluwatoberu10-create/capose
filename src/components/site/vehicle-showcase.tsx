@@ -25,6 +25,9 @@ export function VehicleShowcase({ v, price, was, whatsappHref, orderable }: Prop
     const general = v.images.filter((i) => !i.colorId);
     return general.length ? general : v.images;
   }, [color, v.images]);
+  // When the chosen colour has no photos yet, say which colour the shown photo actually is.
+  const shownColor = color && images.length && images.every((i) => i.colorId && i.colorId !== color.id)
+    ? v.colors.find((c) => c.id === images[0].colorId)?.name ?? null : null;
 
   const [index, setIndex] = useState(0);
   useEffect(() => setIndex(0), [colorId]);
@@ -106,6 +109,7 @@ export function VehicleShowcase({ v, price, was, whatsappHref, orderable }: Prop
             </div>
           </div>
         )}
+        {color && shownColor && <p className="mt-3 text-[13px] text-muted">Photos of the {color.name} car are coming soon — pictured in {shownColor}.</p>}
         {stockNote && <p className={`mt-4 text-sm ${colorOut ? "text-bad" : "text-ok"}`}>{stockNote}</p>}
 
         <div className="mt-6 grid gap-2.5">
