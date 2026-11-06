@@ -12,25 +12,42 @@ import { ContactForm } from "./contact-form";
 import { SaveButton, ShareButton } from "./saved";
 import { CarPlaceholder } from "./vehicle-card";
 
+const INTERIOR_KINDS = new Set(["interior", "dashboard"]);
+
 type Props = { v: PublicVehicle; price: number; was: number | null; whatsappHref: string; orderable: boolean };
 
 export function VehicleShowcase({ v, price, was, whatsappHref, orderable }: Props) {
   const [colorId, setColorId] = useState<string | null>(() => v.colors.find((c) => c.stockQuantity === null || c.stockQuantity > 0)?.id ?? v.colors[0]?.id ?? null);
   const color = v.colors.find((c) => c.id === colorId) ?? null;
 
-  // Colour-specific photos when the chosen colour has them, otherwise the general gallery.
-  const images = useMemo(() => {
-    const own = color ? v.images.filter((i) => i.colorId === color.id) : [];
-    if (own.length) return own;
+  // The chosen colour's own photos (exterior and interior), followed by photos tagged "All colours".
+  // A colour without photos yet falls back to the general photos, or to the first colour that has some.
+  const colorImages = useMemo(() => {
     const general = v.images.filter((i) => !i.colorId);
-    return general.length ? general : v.images;
+    const own = color ? v.images.filter((i) => i.colorId === color.id) : [];
+    if (own.length) return [...own, ...general];
+    if (general.length) return general;
+    const firstTagged = v.images[0]?.colorId;
+    return v.images.filter((i) => i.colorId === firstTagged);
   }, [color, v.images]);
   // When the chosen colour has no photos yet, say which colour the shown photo actually is.
-  const shownColor = color && images.length && images.every((i) => i.colorId && i.colorId !== color.id)
-    ? v.colors.find((c) => c.id === images[0].colorId)?.name ?? null : null;
+  const shownColor = color && colorImages.length && colorImages.every((i) => i.colorId && i.colorId !== color.id)
+    ? v.colors.find((c) => c.id === colorImages[0].colorId)?.name ?? null : null;
+
+  // Exterior / interior tabs, shown only when the chosen colour has both kinds of photo.
+  const [view, setView] = useState<"all" | "exterior" | "interior">("all");
+  const counts = useMemo(() => {
+    const interior = colorImages.filter((i) => INTERIOR_KINDS.has(i.kind)).length;
+    return { all: colorImages.length, interior, exterior: colorImages.length - interior };
+  }, [colorImages]);
+  const showTabs = counts.interior > 0 && counts.exterior > 0;
+  const images = useMemo(() => {
+    if (!showTabs || view === "all") return colorImages;
+    return colorImages.filter((i) => INTERIOR_KINDS.has(i.kind) === (view === "interior"));
+  }, [colorImages, view, showTabs]);
 
   const [index, setIndex] = useState(0);
-  useEffect(() => setIndex(0), [colorId]);
+  useEffect(() => setIndex(0), [colorId, view]);
   const current = images[index];
   const go = (d: number) => setIndex((i) => (images.length ? (i + d + images.length) % images.length : 0));
 
@@ -61,6 +78,17 @@ export function VehicleShowcase({ v, price, was, whatsappHref, orderable }: Prop
             </>
           )}
         </div>
+        {showTabs && (
+          <div className="mt-3 flex flex-wrap items-center gap-2" role="tablist" aria-label="Photo view">
+            {(["all", "exterior", "interior"] as const).map((k) => (
+              <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
+                className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition ${view === k ? "border-ink bg-ink text-white" : "border-line bg-white text-ink hover:border-stone"}`}>
+                {k === "all" ? "All photos" : k === "exterior" ? "Exterior" : "Interior"} <span className="opacity-60">{counts[k]}</span>
+              </button>
+            ))}
+            {color && <span className="text-[12.5px] text-muted">{color.name}</span>}
+          </div>
+        )}
         {images.length > 1 && (
           <div className="scrollbar-none mt-3 flex gap-2 overflow-x-auto pb-1">
             {images.map((img, i) => (

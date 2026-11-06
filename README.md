@@ -29,7 +29,8 @@ npm run admin:create -- you@yourdealership.com "Your Name" owner   # prints a pa
 | Approved agent | `ada@aurum-demo.test` | `AgentDemo!2026` |
 
 To show a couple of sample cars on a live site (no demo accounts or finance data), run `npm run demo:cars`
-(default: Camry + Range Rover Sport; pass other keys from `scripts/demo-data.ts`). The demo seed itself refuses
+(default: Camry + Range Rover Sport; pass other keys from `scripts/demo-data.ts`; add `--refresh` to update the photos and
+colours of demo cars that are already there). The demo seed itself refuses
 non-local databases because its logins are public.
 
 Remove all demo data with **Admin → Settings → Remove demo data** or `npm run demo:remove`.

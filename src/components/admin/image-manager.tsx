@@ -77,6 +77,11 @@ export function ImageManager({ vehicleId, images, colors }: { vehicleId: string;
       <div className="border-b border-line px-4 py-3.5 sm:px-6">
         <h2 className="text-[15px] font-semibold">Photos</h2>
         <p className="mt-0.5 text-[12.5px] text-muted">Upload front, rear, side, interior, dashboard and engine shots. The featured photo is used on cards and listings.</p>
+        {colors.length > 0 && (
+          <p className="mt-1.5 text-[12.5px] text-muted">
+            <strong className="font-medium text-ink">Photos per colour:</strong> choose a colour, choose the photo type, then select as many photos as you like at once. Do the exterior shots and the interior shots as two uploads. Customers see that colour&apos;s photos when they tap its swatch, with Exterior / Interior tabs. Photos left on “All colours” show for every colour.
+          </p>
+        )}
       </div>
       <div className="p-4 sm:p-6">
         <div
@@ -98,8 +103,23 @@ export function ImageManager({ vehicleId, images, colors }: { vehicleId: string;
           <button type="button" disabled={!!busy} onClick={() => input.current?.click()} className={btn("primary", "md", "mt-3")}>
             {busy ? <><span className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" />{busy}</> : "Choose photos"}
           </button>
-          <p className="mt-2 text-[12px] text-stone">or drag & drop · JPG, PNG, WebP, AVIF · up to 8 MB each</p>
+          <p className="mt-2 text-[12px] text-stone">Select several at once, or drag & drop · JPG, PNG, WebP, AVIF · up to 8 MB each</p>
         </div>
+        {colors.length > 0 && images.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2 text-[12.5px]">
+            {[...colors.map((c) => ({ key: c.id, name: c.name, hex: c.hex as string | null })), { key: "", name: "All colours", hex: null }].map((c) => {
+              const list = images.filter((i) => (i.colorId ?? "") === c.key);
+              if (!c.key && !list.length) return null;
+              const interior = list.filter((i) => i.kind === "interior" || i.kind === "dashboard").length;
+              return (
+                <span key={c.key || "all"} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${list.length ? "border-line bg-white" : "border-bad/30 bg-[#fdf2f2] text-bad"}`}>
+                  {c.hex && <span className="size-3 rounded-full border border-black/10" style={{ background: c.hex }} />}
+                  {c.name}: {list.length ? `${list.length - interior} exterior · ${interior} interior` : "no photos yet"}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {images.length === 0 ? <p className="mt-5 text-center text-sm text-muted">No photos yet.</p> : (
           <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,6 +130,7 @@ export function ImageManager({ vehicleId, images, colors }: { vehicleId: string;
                   <div className="absolute top-2 left-2 flex gap-1.5">
                     <Badge tone="dark">#{i + 1}</Badge>
                     {img.isFeatured && <Badge tone="gold">★ Featured</Badge>}
+                    {(() => { const c = colors.find((x) => x.id === img.colorId); return c ? <Badge tone="dark"><span className="mr-1 inline-block size-2.5 rounded-full border border-white/40 align-middle" style={{ background: c.hex }} />{c.name}</Badge> : null; })()}
                   </div>
                 </div>
                 <div className="space-y-2 p-3">

@@ -5,6 +5,7 @@
  *
  *   npm run demo:cars                    (Camry + Range Rover Sport)
  *   npm run demo:cars -- amggt huracan   (any keys from scripts/demo-data.ts)
+ *   npm run demo:cars -- camry rangerover --refresh   (update photos/colours of demo cars already added)
  */
 import { loadDotEnv } from "./env";
 import { VEHICLES } from "./demo-data";
@@ -15,18 +16,41 @@ async function main() {
   ensureEnv();
   const { db, getPool } = await import("../src/db");
   const S = await import("../src/db/schema");
-  const { eq, sql } = await import("drizzle-orm");
+  const { and, eq, like, sql } = await import("drizzle-orm");
   const { slugify } = await import("../src/lib/format");
   const { syncVehicleStock } = await import("../src/server/services/vehicles");
 
+  const refresh = process.argv.includes("--refresh");
   const keys = process.argv.slice(2).filter((a) => !a.startsWith("-"));
   const wanted = keys.length ? keys : ["camry", "rangerover"];
   for (const key of wanted) {
     const v = VEHICLES.find((x) => x.key === key);
     if (!v) { console.log(`[cars] unknown key "${key}" — choose from: ${VEHICLES.map((x) => x.key).join(", ")}`); continue; }
     const slug = slugify(`${v.brand} ${v.model} ${v.year} ${v.exterior}`);
-    const [exists] = await db.select({ id: S.vehicles.id }).from(S.vehicles).where(eq(S.vehicles.slug, slug)).limit(1);
-    if (exists) { console.log(`[cars] ${slug} already exists — skipped`); continue; }
+    const [exists] = await db.select({ id: S.vehicles.id, isDemo: S.vehicles.isDemo }).from(S.vehicles).where(eq(S.vehicles.slug, slug)).limit(1);
+    if (exists && !(refresh && exists.isDemo)) { console.log(`[cars] ${slug} already exists — skipped${refresh ? " (not a demo car)" : ""}`); continue; }
+    if (exists) {
+      // --refresh: bring an existing demo car's colours and demo photos up to date.
+      // Only /demo/ photos are replaced; photos uploaded in the admin are left alone.
+      await db.transaction(async (tx) => {
+        const current = await tx.select().from(S.vehicleColors).where(eq(S.vehicleColors.vehicleId, exists.id));
+        const colorIds: Record<string, string> = Object.fromEntries(current.map((c) => [c.name, c.id]));
+        for (const [i, c] of (v.colors ?? []).entries()) {
+          if (colorIds[c.name]) continue;
+          const [cr] = await tx.insert(S.vehicleColors).values({ vehicleId: exists.id, name: c.name, hex: c.hex, stockQuantity: c.stock, position: current.length + i }).returning();
+          colorIds[c.name] = cr.id;
+        }
+        await tx.delete(S.vehicleImages).where(and(eq(S.vehicleImages.vehicleId, exists.id), like(S.vehicleImages.url, "/demo/%")));
+        const kept = await tx.select({ id: S.vehicleImages.id }).from(S.vehicleImages).where(eq(S.vehicleImages.vehicleId, exists.id));
+        for (const [i, img] of v.images.entries()) {
+          await tx.insert(S.vehicleImages).values({ vehicleId: exists.id, url: `/demo/${img.file}.jpg`, kind: img.kind as "front", position: kept.length + i, isFeatured: !kept.length && i === 0, colorId: img.color ? colorIds[img.color] ?? null : null });
+        }
+        await tx.update(S.vehicles).set({ description: v.description, updatedAt: new Date() }).where(eq(S.vehicles.id, exists.id));
+        await syncVehicleStock(tx, exists.id);
+      });
+      console.log(`[cars] refreshed ${slug}: ${v.images.length} photos, ${(v.colors ?? []).length} colours`);
+      continue;
+    }
     const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(S.vehicles);
     let stockNumber = `AM-${1001 + n}`;
     for (let i = 0; (await db.select({ id: S.vehicles.id }).from(S.vehicles).where(eq(S.vehicles.stockNumber, stockNumber)).limit(1)).length; i++) stockNumber = `AM-${1002 + n + i}`;
